@@ -143,6 +143,10 @@ class Notifier(PGManager):
             raise RuntimeError(
                 "Notifier not connected. Call `connect()` before creating a trigger."
             )
+        if event not in ['INSERT', 'UPDATE', 'DELETE']:
+            raise ValueError("event value must be either INSERT', 'UPDATE' or 'DELETE'")
+        if timing not in ['BEFORE', 'AFTER']:
+            raise ValueError("timing value must be either 'BEFORE' or 'AFTER'")
 
         try:
             query = create_trigger_query(
