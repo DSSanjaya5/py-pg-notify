@@ -123,7 +123,9 @@ We welcome contributions! Please follow these steps:
 1. Fork the repository.
 2. Create a new branch.
 3. Make your changes.
-4. Submit a pull request.
+4. Add the test cases if needed.
+5. Test all the test cases for verfication.
+6. Submit a pull request.
 
 ---
 
