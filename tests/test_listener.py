@@ -1,7 +1,7 @@
-
 import pytest
 from unittest.mock import AsyncMock, patch
 from py_pg_notify.listener import Listener
+
 
 @pytest.mark.asyncio
 class TestListener:
@@ -13,6 +13,7 @@ class TestListener:
     def mock_handler(self):
         async def handler(connection, pid, channel, payload):
             pass
+
         return handler
 
     async def test_listener_initialization_with_dsn(self, mock_dsn):
@@ -22,7 +23,13 @@ class TestListener:
         assert listener.listeners == {}
 
     async def test_listener_initialization_without_dsn(self):
-        listener = Listener(user="user", password="password", host="localhost", port=5432, dbname="testdb")
+        listener = Listener(
+            user="user",
+            password="password",
+            host="localhost",
+            port=5432,
+            dbname="testdb",
+        )
         expected_dsn = "postgresql://user:password@localhost:5432/testdb"
         assert listener.dsn == expected_dsn
         assert listener.conn is None
@@ -62,7 +69,9 @@ class TestListener:
             await listener.add_listener("test_channel", mock_handler)
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_remove_listener_successful(self, mock_connect, mock_dsn, mock_handler):
+    async def test_remove_listener_successful(
+        self, mock_connect, mock_dsn, mock_handler
+    ):
         listener = Listener(dsn=mock_dsn)
         await listener.connect()
 
@@ -76,15 +85,13 @@ class TestListener:
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
     async def test_remove_nonexistent_listener(self, mock_connect):
-        listener = Listener(dsn="postgresql://user:password@localhost:5432/testdb")  # Valid DSN
+        listener = Listener(dsn="postgresql://user:password@localhost:5432/testdb")
         await listener.connect()
-
-        # Ensure the connection is mocked
         mock_connect.assert_called_once()
-
-        # Attempt to remove a non-existent listener (should not raise an error)
-        await listener.remove_listener("nonexistent_channel")
-        assert "nonexistent_channel" not in listener.listeners
+        with pytest.raises(
+            KeyError, match="No listener found for channel 'nonexistent_channel'."
+        ):
+            await listener.remove_listener("nonexistent_channel")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
     async def test_close_successful(self, mock_connect, mock_dsn):
@@ -102,7 +109,6 @@ class TestListener:
         listener = Listener(dsn="mock_dsn")
         await listener.close()  # Should not raise an error if no connection exists
 
-    
     @patch("asyncpg.connect", new_callable=AsyncMock)
     async def test_context_manager(self, mock_connect, mock_dsn):
         listener = Listener(dsn=mock_dsn)
@@ -121,5 +127,9 @@ class TestListener:
         await listener.add_listener("test_channel", callback_mock)
 
         # Simulate a notification
-        await listener.listeners["test_channel"](None, 12345, "test_channel", '{"key": "value"}')
-        callback_mock.assert_awaited_once_with(None, 12345, "test_channel", '{"key": "value"}')
+        await listener.listeners["test_channel"](
+            None, 12345, "test_channel", '{"key": "value"}'
+        )
+        callback_mock.assert_awaited_once_with(
+            None, 12345, "test_channel", '{"key": "value"}'
+        )
