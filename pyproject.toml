@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-pg-notify"
-version = "0.1.0"
+version = "0.1.1"
 description = "Simplifies listening to and sending notifications using PostgreSQL's LISTEN/NOTIFY functionality"
 authors = [
     { name = "D S Sanjaya", email = "dssanjay55555@gmail.com" }
