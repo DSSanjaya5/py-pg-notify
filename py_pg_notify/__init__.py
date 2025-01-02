@@ -1,4 +1,4 @@
-from .pgmanager import PGManager
+from .pgmanager import PGConfig, PGManager
 from .listener import Listener
 from .notifier import Notifier
 

@@ -1,14 +1,24 @@
+import os
 import pytest
 from textwrap import dedent
 from unittest.mock import AsyncMock, patch
 from py_pg_notify.notifier import Notifier
+from py_pg_notify.pgmanager import (
+    PGConfig,
+)  # Assuming PGConfig is imported from the correct module
 
 
 @pytest.mark.asyncio
 class TestNotifier:
     @pytest.fixture
-    def mock_dsn(self):
-        return "postgresql://user:password@localhost:5432/testdb"
+    def mock_config(self):
+        return PGConfig(
+            user="user",
+            password="password",
+            dbname="testdb",
+            host="localhost",
+            port=5432,
+        )
 
     @pytest.fixture
     def mock_handler(self):
@@ -17,79 +27,66 @@ class TestNotifier:
 
         return handler
 
-    async def test_notifier_initialization_with_dsn(self, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
-        assert notifier.dsn == mock_dsn
-        assert notifier.conn is None
-
-    async def test_notifier_initialization_without_dsn(self):
-        notifier = Notifier(
-            user="user",
-            password="password",
-            host="localhost",
-            port=5432,
-            dbname="testdb",
-        )
-        expected_dsn = "postgresql://user:password@localhost:5432/testdb"
-        assert notifier.dsn == expected_dsn
-        assert notifier.conn is None
-
     async def test_notifier_initialization_missing_params(self):
         with pytest.raises(ValueError):
-            Notifier(user="user", password="password")  # Missing dbname
+            Notifier(
+                config=PGConfig(user="user", password="password")
+            )  # Missing dbname
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_connect_successful(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_connect_successful(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
-        mock_connect.assert_called_once_with(mock_dsn)
+        mock_connect.assert_called_once_with(mock_config.dsn)
         assert notifier.conn == mock_connect.return_value
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_connect_already_connected(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_connect_already_connected(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         notifier.conn = AsyncMock()
         await notifier.connect()
         mock_connect.assert_not_called()  # No new connection should be created
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_create_trigger_function_successful(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_create_trigger_function_successful(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         await notifier.create_trigger_function("test_function", "test_channel")
         expected_query = dedent(
             """
             CREATE OR REPLACE FUNCTION test_function()
-            RETURNS TRIGGER AS $$
-            BEGIN
+            RETURNS TRIGGER AS $$ 
+            BEGIN 
                 PERFORM pg_notify(
-                    'test_channel',
+                    'test_channel', 
                     json_build_object(
-                        'trigger', TG_NAME,
-                        'timing', TG_WHEN,
-                        'event', TG_OP,
-                        'new', NEW,
+                        'trigger', TG_NAME, 
+                        'timing', TG_WHEN, 
+                        'event', TG_OP, 
+                        'new', NEW, 
                         'old', OLD
-                    )::text
-                );
-                RETURN NEW;
-            END;
+                    )::text 
+                ); 
+                RETURN NEW; 
+            END; 
             $$ LANGUAGE plpgsql;
-        """
+            """
         )
 
         actual_query = mock_connect.return_value.execute.call_args[0][0]
         assert " ".join(actual_query.split()) == " ".join(expected_query.split())
 
     async def test_create_trigger_function_without_connection(self):
-        notifier = Notifier(dsn="mock_dsn")
+        notifier = Notifier(
+            config=PGConfig(user="user", password="password", dbname="testdb")
+        )
         with pytest.raises(RuntimeError):
             await notifier.create_trigger_function("test_function", "test_channel")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_get_trigger_functions_successful(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_get_trigger_functions_successful(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         mock_connect.return_value.fetch.return_value = [
@@ -99,13 +96,15 @@ class TestNotifier:
         assert functions == ["test_function"]
 
     async def test_get_trigger_functions_without_connection(self):
-        notifier = Notifier(dsn="mock_dsn")
+        notifier = Notifier(
+            config=PGConfig(user="user", password="password", dbname="testdb")
+        )
         with pytest.raises(RuntimeError):
             await notifier.get_trigger_functions("test_table")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_remove_trigger_function_successful(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_remove_trigger_function_successful(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         await notifier.remove_trigger_function("test_function")
@@ -114,13 +113,15 @@ class TestNotifier:
         )
 
     async def test_remove_trigger_function_without_connection(self):
-        notifier = Notifier(dsn="mock_dsn")
+        notifier = Notifier(
+            config=PGConfig(user="user", password="password", dbname="testdb")
+        )
         with pytest.raises(RuntimeError):
             await notifier.remove_trigger_function("test_function")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_create_trigger_successful(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_create_trigger_successful(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         await notifier.create_trigger(
@@ -132,22 +133,24 @@ class TestNotifier:
             AFTER INSERT ON test_table
             FOR EACH ROW
             EXECUTE FUNCTION test_function();
-        """
+            """
         )
 
         actual_query = mock_connect.return_value.execute.call_args[0][0]
         assert " ".join(actual_query.split()) == " ".join(expected_query.split())
 
     async def test_create_trigger_without_connection(self):
-        notifier = Notifier(dsn="mock_dsn")
+        notifier = Notifier(
+            config=PGConfig(user="user", password="password", dbname="testdb")
+        )
         with pytest.raises(RuntimeError):
             await notifier.create_trigger(
                 "test_table", "test_trigger", "test_function", "INSERT"
             )
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_get_triggers_successful(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_get_triggers_successful(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         mock_connect.return_value.fetch.return_value = [
@@ -157,13 +160,15 @@ class TestNotifier:
         assert triggers == ["test_trigger"]
 
     async def test_get_triggers_without_connection(self):
-        notifier = Notifier(dsn="mock_dsn")
+        notifier = Notifier(
+            config=PGConfig(user="user", password="password", dbname="testdb")
+        )
         with pytest.raises(RuntimeError):
             await notifier.get_triggers("test_table")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_remove_trigger_successful(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_remove_trigger_successful(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         await notifier.remove_trigger("test_table", "test_trigger")
@@ -172,13 +177,15 @@ class TestNotifier:
         )
 
     async def test_remove_trigger_without_connection(self):
-        notifier = Notifier(dsn="mock_dsn")
+        notifier = Notifier(
+            config=PGConfig(user="user", password="password", dbname="testdb")
+        )
         with pytest.raises(RuntimeError):
             await notifier.remove_trigger("test_table", "test_trigger")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_context_manager(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_context_manager(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
 
         async with notifier as n:
             assert n.conn == mock_connect.return_value
@@ -186,47 +193,44 @@ class TestNotifier:
         mock_connect.return_value.close.assert_called_once()
 
     async def test_close_without_connection(self):
-        notifier = Notifier(dsn="mock_dsn")
+        notifier = Notifier(
+            config=PGConfig(user="user", password="password", dbname="testdb")
+        )
         await notifier.close()  # Should not raise an error if no connection exists
 
     @pytest.mark.parametrize(
-        "dsn, user, password, host, port, dbname, expected_dsn",
+        "config, expected_dsn",
         [
             (
-                "postgresql://user:password@localhost:5432/testdb",
-                None,
-                None,
-                None,
-                None,
-                None,
+                PGConfig(
+                    user="user",
+                    password="password",
+                    dbname="testdb",
+                    host="localhost",
+                    port=5432,
+                ),
                 "postgresql://user:password@localhost:5432/testdb",
             ),
             (
-                None,
-                "user",
-                "password",
-                "localhost",
-                5432,
-                "testdb",
+                PGConfig(
+                    user="user",
+                    password="password",
+                    dbname="testdb",
+                    host="localhost",
+                    port=5432,
+                ),
                 "postgresql://user:password@localhost:5432/testdb",
             ),
         ],
     )
-    async def test_notifier_initialization_various_inputs(
-        self, dsn, user, password, host, port, dbname, expected_dsn
-    ):
-        if dsn:
-            notifier = Notifier(dsn=dsn)
-        else:
-            notifier = Notifier(
-                user=user, password=password, host=host, port=port, dbname=dbname
-            )
+    async def test_notifier_initialization_various_inputs(self, config, expected_dsn):
+        notifier = Notifier(config=config)
         assert notifier.dsn == expected_dsn
         assert notifier.conn is None
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_get_triggers_varying_mock_data(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_get_triggers_varying_mock_data(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         # Case 1: No triggers
@@ -251,9 +255,9 @@ class TestNotifier:
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
     async def test_get_trigger_functions_varying_mock_data(
-        self, mock_connect, mock_dsn
+        self, mock_connect, mock_config
     ):
-        notifier = Notifier(dsn=mock_dsn)
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         # Case 1: No trigger functions
@@ -277,18 +281,18 @@ class TestNotifier:
         assert functions == ["function_one", "function_two"]
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_connect_raises_exception(self, mock_connect, mock_dsn):
+    async def test_connect_raises_exception(self, mock_connect, mock_config):
         mock_connect.side_effect = Exception("Connection error")
-        notifier = Notifier(dsn=mock_dsn)
+        notifier = Notifier(config=mock_config)
 
         with pytest.raises(Exception, match="Connection error"):
             await notifier.connect()
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
     async def test_create_trigger_function_duplicate_error(
-        self, mock_connect, mock_dsn
+        self, mock_connect, mock_config
     ):
-        notifier = Notifier(dsn=mock_dsn)
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         mock_connect.return_value.execute.side_effect = Exception(
@@ -298,8 +302,8 @@ class TestNotifier:
             await notifier.create_trigger_function("duplicate_function", "test_channel")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_create_trigger_sql_error(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_create_trigger_sql_error(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         mock_connect.return_value.execute.side_effect = Exception("SQL syntax error")
@@ -309,8 +313,8 @@ class TestNotifier:
             )
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_remove_trigger_not_exists(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_remove_trigger_not_exists(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         mock_connect.return_value.execute.side_effect = Exception(
@@ -320,8 +324,8 @@ class TestNotifier:
             await notifier.remove_trigger("test_table", "non_existent_trigger")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_remove_trigger_function_not_exists(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_remove_trigger_function_not_exists(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         mock_connect.return_value.execute.side_effect = Exception(
@@ -331,11 +335,56 @@ class TestNotifier:
             await notifier.remove_trigger_function("non_existent_function")
 
     @patch("asyncpg.connect", new_callable=AsyncMock)
-    async def test_close_handles_connection_error(self, mock_connect, mock_dsn):
-        notifier = Notifier(dsn=mock_dsn)
+    async def test_close_handles_connection_error(self, mock_connect, mock_config):
+        notifier = Notifier(config=mock_config)
         await notifier.connect()
 
         # Simulate connection close failure
         mock_connect.return_value.close.side_effect = Exception("Close error")
         with pytest.raises(Exception, match="Close error"):
             await notifier.close()
+
+    @pytest.mark.parametrize(
+        "config_dict, expected_dsn",
+        [
+            (
+                {
+                    "user": "user",
+                    "password": "password",
+                    "dbname": "testdb",
+                    "host": "localhost",
+                    "port": 5432,
+                },
+                "postgresql://user:password@localhost:5432/testdb",
+            ),
+        ],
+    )
+    async def test_notifier_initialization_with_dict(self, config_dict, expected_dsn):
+        config = PGConfig(**config_dict)
+        notifier = Notifier(config=config)
+        assert notifier.dsn == expected_dsn
+        assert notifier.conn is None
+
+    @patch("asyncpg.connect", new_callable=AsyncMock)
+    async def test_notifier_initialization_with_env(self, mock_connect):
+        # Set environment variables
+        os.environ["PG_USER"] = "user"
+        os.environ["PG_PASSWORD"] = "password"
+        os.environ["PG_DBNAME"] = "testdb"
+        os.environ["PG_HOST"] = "localhost"
+        os.environ["PG_PORT"] = "5432"
+
+        # Initialize the notifier using the environment variables
+        config = PGConfig()
+        notifier = Notifier(config)
+        expected_dsn = "postgresql://user:password@localhost:5432/testdb"
+
+        assert notifier.dsn == expected_dsn
+        assert notifier.conn is None
+
+        # Clean up environment variables
+        del os.environ["PG_USER"]
+        del os.environ["PG_PASSWORD"]
+        del os.environ["PG_DBNAME"]
+        del os.environ["PG_HOST"]
+        del os.environ["PG_PORT"]
