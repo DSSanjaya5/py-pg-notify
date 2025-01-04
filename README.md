@@ -108,16 +108,6 @@ Refer to the examples/ folder for complete usage scenarios.
 
 ---
 
-## 🧪 Testing
-Run the test suite using pytest:
-
-```bash
-pip install -r requirements_test.txt
-pytest --asyncio-mode=auto
-```
-
----
-
 ## 📄 License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
