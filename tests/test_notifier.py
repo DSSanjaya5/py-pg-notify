@@ -388,3 +388,55 @@ class TestNotifier:
         del os.environ["PG_DBNAME"]
         del os.environ["PG_HOST"]
         del os.environ["PG_PORT"]
+
+    @patch("asyncpg.connect", new_callable=AsyncMock)
+    async def test_notify_success(self, mock_connect, mock_config):
+        mock_conn = AsyncMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.execute = AsyncMock(return_value=None)
+
+        notifier = Notifier(config=mock_config)
+        await notifier.connect()
+        await notifier.notify("ch_01", "message")
+
+        expected_query = "SELECT pg_notify('ch_01', 'message');"
+        mock_conn.execute.assert_called_once_with(expected_query)
+
+    @patch("asyncpg.connect", new_callable=AsyncMock)
+    async def test_notify_error_during_execution(self, mock_connect, mock_config):
+        mock_conn = AsyncMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.execute = AsyncMock(side_effect=Exception("Database error"))
+
+        notifier = Notifier(config=mock_config)
+        await notifier.connect()
+
+        with pytest.raises(Exception, match="Error while sending the notification: Database error"):
+            await notifier.notify("ch_01", "message")
+
+    @patch("asyncpg.connect", new_callable=AsyncMock)
+    async def test_notify_with_handler(self, mock_connect, mock_config):
+        mock_conn = AsyncMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.execute = AsyncMock(return_value=None)
+
+        notifier = Notifier(config=mock_config)
+        await notifier.connect()
+
+        await notifier.notify("ch_01", "message")
+
+        expected_query = "SELECT pg_notify('ch_01', 'message');"
+        mock_conn.execute.assert_called_once_with(expected_query)
+
+    @patch("asyncpg.connect", new_callable=AsyncMock)
+    async def test_notify_invalid_channel(self, mock_connect, mock_config):
+        mock_conn = AsyncMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.execute = AsyncMock(side_effect=Exception("Invalid channel"))
+
+        notifier = Notifier(config=mock_config)
+        await notifier.connect()
+
+        with pytest.raises(Exception, match="Invalid channel"):
+            await notifier.notify("invalid_channel", "message")
+

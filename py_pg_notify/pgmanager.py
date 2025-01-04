@@ -18,8 +18,8 @@ class PGConfig:
 
     def __init__(
         self,
-        config_dict=None,
         dsn: str = None,
+        config_dict=None,
         *,
         user: str = None,
         password: str = None,
