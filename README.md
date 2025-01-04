@@ -25,21 +25,40 @@ pip install py-pg-notify
 
 ## Usage
 
+### Configuration Example
+You can use `PGConfig` to manage PostgreSQL connection parameters via a dictionary, environment variables, or direct parameters.
+```python
+from py_pg_notify import PGConfig
+
+# Example using a dictionary
+config_dict = {
+    "user": "<username>",
+    "password": "<password>",
+    "host": "<host>",
+    "port": 5432,
+    "dbname": "<dbname>"
+}
+config = PGConfig(config_dict=config_dict)
+
+# Example using environment variables
+# Ensure PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, and PG_DBNAME are set in your environment
+config = PGConfig()
+
+# Example using direct parameters
+config = PGConfig(user="<username>", password="<password>", host="<host>", port=5432, dbname="<dbname>")
+```
+
 ### Notifier Example
 ```python
 import asyncio
-from py_pg_notify import Notifier
-
+from py_pg_notify import Notifier, PGConfig
 
 async def create_trigger_example():
+    # Define the configuration using environment variables
+    config = PGConfig()
+
     # Define the Notifier class for PostgreSQL
-    notifier = Notifier(
-        user="<username>",
-        password="<password>",
-        host="<host>",
-        port=5432,
-        dbname="<dbname>",
-    )
+    notifier = Notifier(config)
 
     # Connect to the database
     async with notifier:
@@ -64,7 +83,6 @@ async def create_trigger_example():
         # Remove the trigger from the table
         await notifier.remove_trigger("my_table", "my_trigger")
 
-
 if __name__ == "__main__":
     asyncio.run(create_trigger_example())
 ```
@@ -72,26 +90,21 @@ if __name__ == "__main__":
 ### Listener Example
 ```python
 import asyncio
-from py_pg_notify import Listener
-
+from py_pg_notify import Listener, PGConfig
 
 async def notification_handler(connection, pid, channel, payload):
     # Perform any processing on the received notification
     print(f"Notification received: Channel={channel}, Payload={payload}")
 
-
 async def main():
-    listener = Listener(
-        user="<username>",
-        password="<password>",
-        host="<host>",
-        port=5432,
-        dbname="<dbname>",
-    )
+    # Define the configuration using environment variables
+    config = PGConfig()
+
+    # Define the Listener class for PostgreSQL
+    listener = Listener(config)
     async with listener:
         await listener.add_listener("ch_01", notification_handler)
         await asyncio.sleep(3600)  # Simulate long-running process
-
 
 if __name__ == "__main__":
     asyncio.run(main())
