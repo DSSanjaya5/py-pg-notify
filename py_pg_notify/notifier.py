@@ -4,6 +4,7 @@ Module to manage PostgreSQL notification triggers using asyncpg.
 
 from .pgmanager import PGManager, PGConfig
 from .utils import (
+    notify_query,
     create_trigger_function_query,
     GET_TRIGGER_FUNCTIONS_QUERY,
     GET_TRIGGERS_QUERY,
@@ -18,7 +19,7 @@ class Notifier(PGManager):
     A class to manage PostgreSQL notification triggers using asyncpg.
 
     Key Features:
-    - Connection management for PostgreSQL.
+    - Send custom notifications using notify
     - Dynamic creation and removal of triggers and notification functions.
     - Retrieval of existing triggers and functions.
     - Context manager support for easier resource management.
@@ -32,6 +33,30 @@ class Notifier(PGManager):
             config (PGConfig): An instance of PGConfig containing connection details.
         """
         super().__init__(config)
+
+    async def notify(self, channel: str, payload: str):
+        """
+        Sends a notification to the specified channel with the provided payload.
+
+        Args:
+            channel (str): The name of the channel to send the notification to.
+            payload (str): The payload or message to send along with the notification.
+
+        Raises:
+            RuntimeError: If the Notifier is not connected to the database.
+            Exception: If there is an error while executing the pg_notify query.
+        """
+        if self.conn is None:
+            raise RuntimeError(
+                "Notifier not connected. Call connect() before creating a function."
+            )
+        
+        try:
+            query = notify_query(channel, payload)
+            await self.conn.execute(query)
+        except Exception as e:
+            raise Exception(f"Error while sending the notification: {e}")
+
 
     async def create_trigger_function(self, function_name: str, channel: str):
         """
