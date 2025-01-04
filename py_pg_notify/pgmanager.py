@@ -42,11 +42,10 @@ class PGConfig:
         Priority of parameter resolution:
         1. Explicit parameters passed to this class.
         2. Values from `config_dict`.
-        3. Environment variables (`PG_USER`, `PG_PASSWORD`, etc.).
+        3. Environment variables (`PG_USER`, `PG_PASSWORD`, `PG_HOST`, `PG_PORT`, `PG_DBNAME`).
         """
         # Extract from dictionary if provided
         config_dict = config_dict or {}
-        print(os.getenv("PG_USER"))
         self.dsn = dsn or self._generate_dsn(
             user or config_dict.get("user") or os.getenv("PG_USER"),
             password or config_dict.get("password") or os.getenv("PG_PASSWORD"),
@@ -90,9 +89,11 @@ class PGManager:
         Raises:
             asyncpg.exceptions.PostgresError: If the connection to the PostgreSQL database fails.
         """
-        if self.conn is None:
-            self.conn = await asyncpg.connect(self.dsn)
-            print("Connected to the PostgreSQL database.")
+        try:
+            if self.conn is None:
+                self.conn = await asyncpg.connect(self.dsn)
+        except asyncpg.exceptions.PostgresError as e:
+            raise RuntimeError(f"Failed to connect to the PostgreSQL database: {e}")
 
     async def execute(self, query: str, *args):
         """
@@ -104,19 +105,31 @@ class PGManager:
 
         Returns:
             The result of the query execution.
+
+        Raises:
+            RuntimeError: If the connection is not established.
+            asyncpg.exceptions.PostgresError: If the query execution fails.
         """
         if self.conn is None:
             raise RuntimeError("Connection not established. Call `connect()` first.")
-        return await self.conn.execute(query, *args)
+        try:
+            return await self.conn.execute(query, *args)
+        except asyncpg.exceptions.PostgresError as e:
+            raise RuntimeError(f"Failed to execute query: {e}")
 
     async def close(self):
         """
         Closes the connection to the PostgreSQL database.
+
+        Raises:
+            asyncpg.exceptions.PostgresError: If closing the connection fails.
         """
-        if self.conn:
-            await self.conn.close()
-            self.conn = None
-            print("Connection closed.")
+        try:
+            if self.conn:
+                await self.conn.close()
+                self.conn = None
+        except asyncpg.exceptions.PostgresError as e:
+            raise RuntimeError(f"Failed to close the connection: {e}")
 
     async def __aenter__(self):
         """
