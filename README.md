@@ -59,6 +59,10 @@ async def create_trigger_example():
 
     async with Notifier(config) as notifier:
 
+        # Send a custom message to 'ch_01' channel
+        await notifier.notify("ch_01", "message")
+
+        # Set up a trigger to notify 'ch_01' when the table is modified
         await notifier.create_trigger_function("notify_function", "ch_01")
         
         await notifier.create_trigger(
