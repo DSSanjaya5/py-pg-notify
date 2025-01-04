@@ -2,7 +2,7 @@
 Module to manage PostgreSQL notification triggers using asyncpg.
 """
 
-from .pgmanager import PGManager
+from .pgmanager import PGManager, PGConfig
 from .utils import (
     create_trigger_function_query,
     GET_TRIGGER_FUNCTIONS_QUERY,
@@ -24,22 +24,14 @@ class Notifier(PGManager):
     - Context manager support for easier resource management.
     """
 
-    def __init__(
-        self,
-        dsn: str = None,
-        *,
-        user: str = None,
-        password: str = None,
-        host: str = "localhost",
-        port: int = 5432,
-        dbname: str = None,
-    ):
+    def __init__(self, config: PGConfig):
         """
-        Initializes the Notifier class with the given PostgreSQL connection details.
+        Initializes the Notifier class with the given PostgreSQL connection configuration.
+
+        Args:
+            config (PGConfig): An instance of PGConfig containing connection details.
         """
-        super().__init__(
-            dsn=dsn, user=user, password=password, host=host, port=port, dbname=dbname
-        )
+        super().__init__(config)
 
     async def create_trigger_function(self, function_name: str, channel: str):
         """
@@ -143,9 +135,9 @@ class Notifier(PGManager):
             raise RuntimeError(
                 "Notifier not connected. Call `connect()` before creating a trigger."
             )
-        if event not in ['INSERT', 'UPDATE', 'DELETE']:
+        if event not in ["INSERT", "UPDATE", "DELETE"]:
             raise ValueError("event value must be either INSERT', 'UPDATE' or 'DELETE'")
-        if timing not in ['BEFORE', 'AFTER']:
+        if timing not in ["BEFORE", "AFTER"]:
             raise ValueError("timing value must be either 'BEFORE' or 'AFTER'")
 
         try:

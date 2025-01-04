@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,7 +9,7 @@ description = "Simplifies listening to and sending notifications using PostgreSQ
 authors = [
     { name = "D S Sanjaya", email = "dssanjay55555@gmail.com" }
 ]
-license = { file = "LICENSE" }
+license = { text = "MIT License" }
 readme = "README.md"
 keywords = ["postgresql", "listen", "notify", "python", "database", "notification", "postgres"]
 classifiers = [
@@ -24,6 +24,8 @@ requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["py_pg_notify"]
+namespaces = false
 
 [project.optional-dependencies]
 dev = [

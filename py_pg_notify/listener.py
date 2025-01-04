@@ -2,7 +2,7 @@
 Module to manage PostgreSQL notification listeners using asyncpg.
 """
 
-from .pgmanager import PGManager
+from .pgmanager import PGManager, PGConfig
 
 
 class Listener(PGManager):
@@ -10,8 +10,14 @@ class Listener(PGManager):
     A class for listening to PostgreSQL notifications.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, config: PGConfig):
+        """
+        Initializes the Listener class with the given PostgreSQL connection configuration.
+
+        Args:
+            config (PGConfig): An instance of PGConfig containing connection details.
+        """
+        super().__init__(config)
         self.listeners = {}
 
     async def add_listener(self, channel: str, callback):
