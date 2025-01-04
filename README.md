@@ -57,15 +57,10 @@ async def create_trigger_example():
     # Define the configuration using environment variables
     config = PGConfig()
 
-    # Define the Notifier class for PostgreSQL
-    notifier = Notifier(config)
+    async with Notifier(config) as notifier:
 
-    # Connect to the database
-    async with notifier:
-        # Create a trigger function for a channel
         await notifier.create_trigger_function("notify_function", "ch_01")
-
-        # Create a trigger on a specific table that calls the function
+        
         await notifier.create_trigger(
             table_name="my_table",
             trigger_name="my_trigger",
@@ -73,15 +68,15 @@ async def create_trigger_example():
             event="INSERT",
         )
 
-        # Retrieve and print existing trigger functions for a table
         trigger_functions = await notifier.get_trigger_functions("my_table")
         print("Existing Trigger Functions:", trigger_functions)
 
-        # Remove a trigger function
-        await notifier.remove_trigger_function("notify_function")
+        triggers = await notifier.get_triggers("my_table")
+        print("Existing Triggers:", triggers)
 
-        # Remove the trigger from the table
         await notifier.remove_trigger("my_table", "my_trigger")
+
+        await notifier.remove_trigger_function("notify_function")
 
 if __name__ == "__main__":
     asyncio.run(create_trigger_example())
@@ -100,9 +95,7 @@ async def main():
     # Define the configuration using environment variables
     config = PGConfig()
 
-    # Define the Listener class for PostgreSQL
-    listener = Listener(config)
-    async with listener:
+    async with Listener(config) as listener:
         await listener.add_listener("ch_01", notification_handler)
         await asyncio.sleep(3600)  # Simulate long-running process
 
