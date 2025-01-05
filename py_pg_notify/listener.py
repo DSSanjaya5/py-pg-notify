@@ -5,6 +5,34 @@ Module to manage PostgreSQL notification listeners using asyncpg.
 from .pgmanager import PGManager, PGConfig
 
 
+class Notification:
+    """
+    Represents a Notification message.
+    """
+
+    def __init__(self, connection, pid, channel, payload):
+        """
+        Initializes a Notification instance.
+
+        Args:
+            connection: The database connection that received the notification.
+            pid (int): The process ID of the sender.
+            channel (str): The name of the channel the notification was sent on.
+            payload (str): The message payload of the notification.
+        """
+        self.connection = connection
+        self.pid = pid
+        self.channel = channel
+        self.payload = payload
+
+    def __repr__(self):
+        return (
+            f"Notification(channel={self.channel}, "
+            f"payload={self.payload}, pid={self.pid})"
+        )
+
+
+
 class Listener(PGManager):
     """
     A class for listening to PostgreSQL notifications.
@@ -40,7 +68,8 @@ class Listener(PGManager):
         try:
 
             async def _wrapped_callback(connection, pid, channel, payload):
-                await callback(connection, pid, channel, payload)
+                notification = Notification(connection, pid, channel, payload)
+                await callback(notification)
 
             self.listeners[channel] = _wrapped_callback
             await self.conn.add_listener(channel, _wrapped_callback)

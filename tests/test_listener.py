@@ -1,7 +1,7 @@
 import os
 import pytest
 from unittest.mock import AsyncMock, patch
-from py_pg_notify.listener import Listener
+from py_pg_notify.listener import Listener, Notification
 from py_pg_notify.pgmanager import PGConfig
 
 
@@ -13,7 +13,7 @@ class TestListener:
 
     @pytest.fixture
     def mock_handler(self):
-        async def handler(connection, pid, channel, payload):
+        async def handler(notification):
             pass
         return handler
 
@@ -126,14 +126,15 @@ class TestListener:
         await listener.add_listener("test_channel", callback_mock)
 
         # Simulate a notification
-        await listener.listeners["test_channel"](
-            None, 12345, "test_channel", '{"key": "value"}'
-        )
-        callback_mock.assert_awaited_once_with(
-            None, 12345, "test_channel", '{"key": "value"}'
-        )
+        notification = Notification(None, 12345, "test_channel", '{"key": "value"}')
+        await listener.listeners["test_channel"](None, 12345, "test_channel", '{"key": "value"}')
 
-    # New test cases
+        callback_mock.assert_awaited_once()
+        notification = callback_mock.await_args.args[0]  # Get the first argument passed to the callback
+        assert notification.channel == "test_channel"
+        assert notification.payload == '{"key": "value"}'
+        assert notification.pid == 12345
+
     @pytest.fixture
     def config_dict(self):
         return {
