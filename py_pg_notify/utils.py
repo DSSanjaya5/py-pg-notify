@@ -1,7 +1,9 @@
 # Utility queries
 
+
 def notify_query(channel, payload):
     return f"SELECT pg_notify('{channel}', '{payload}');"
+
 
 def create_trigger_function_query(function_name, channel):
     return f"""

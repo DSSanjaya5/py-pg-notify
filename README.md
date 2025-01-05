@@ -89,11 +89,11 @@ if __name__ == "__main__":
 ### Listener Example
 ```python
 import asyncio
-from py_pg_notify import Listener, PGConfig
+from py_pg_notify import Listener, PGConfig, Notification
 
-async def notification_handler(connection, pid, channel, payload):
+async def notification_handler(msg: Notification):
     # Perform any processing on the received notification
-    print(f"Notification received: Channel={channel}, Payload={payload}")
+    print(f"Notification received: Channel={msg.channel}, Payload={msg.payload}")
 
 async def main():
     # Define the configuration using environment variables
@@ -104,7 +104,10 @@ async def main():
         await asyncio.sleep(3600)  # Simulate long-running process
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try: 
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        exit(0)
 ```
 
 ### Complete Example (Work In-Progress)

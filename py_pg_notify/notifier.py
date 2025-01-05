@@ -50,13 +50,12 @@ class Notifier(PGManager):
             raise RuntimeError(
                 "Notifier not connected. Call connect() before creating a function."
             )
-        
+
         try:
             query = notify_query(channel, payload)
             await self.conn.execute(query)
         except Exception as e:
             raise Exception(f"Error while sending the notification: {e}")
-
 
     async def create_trigger_function(self, function_name: str, channel: str):
         """
