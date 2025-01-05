@@ -32,7 +32,6 @@ class Notification:
         )
 
 
-
 class Listener(PGManager):
     """
     A class for listening to PostgreSQL notifications.

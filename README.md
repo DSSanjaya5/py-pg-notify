@@ -104,7 +104,10 @@ async def main():
         await asyncio.sleep(3600)  # Simulate long-running process
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try: 
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        exit(0)
 ```
 
 ### Complete Example (Work In-Progress)
