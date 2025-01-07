@@ -110,9 +110,11 @@ if __name__ == "__main__":
         exit(0)
 ```
 
-### Complete Example (Work In-Progress)
-Refer to the examples/ folder for complete usage scenarios.
+### Examples
 
+Refer to the [examples](./examples) folder for complete usage scenarios.
+
+1. 📬 **[PubSub Example](./examples/pubsub)** - Demonstrates a simple Pub/Sub implementation using `py-pg-notify`.
 ---
 
 ## 📄 License

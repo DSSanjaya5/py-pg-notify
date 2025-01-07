@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Callable
 from py_pg_notify import PGConfig, Notifier, Listener, Notification
+from colorama import Fore, Style
 
 class Pub:
 
@@ -21,7 +22,7 @@ class Sub:
         self.config = config
 
     async def default_msg_handler(self, msg: Notification):
-        print(f"[{datetime.now()}] Channel: {msg.channel} | Message Received: {msg.payload}")
+        print(f"{Fore.CYAN}[{datetime.now()}]{Style.RESET_ALL} {Fore.GREEN}{msg.channel}:{Style.RESET_ALL} {Fore.YELLOW}{msg.payload}{Style.RESET_ALL}")
 
     async def subscribe(self, channel: str, msg_handler: Callable = None):
         try: 
