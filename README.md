@@ -1,12 +1,12 @@
 # py-pg-notify
 
-**py-pg-notify** is a Python library that simplifies listening to and sending notifications using PostgreSQL's `LISTEN/NOTIFY` functionality. This package leverages `asyncpg` for asynchronous communication with the database, making it ideal for real-time applications.
+**py-pg-notify** is a Python library that simplifies listening to and sending notifications using PostgreSQL. This package leverages `asyncpg` for asynchronous communication with the database, making it ideal for real-time applications.
 
 ---
 
 ## 📖 Features
 
-- 🔊 **PostgreSQL Notifications**: Easy-to-use interfaces for `LISTEN/NOTIFY`.
+- 🔊 **PostgreSQL Notifications**: Easy-to-use interfaces for `PostgreSQL` notifications.
 - 🔄 **Asynchronous**: Fully asynchronous with support for multiple listeners and channels.
 - 📦 **Lightweight**: Built on top of `asyncpg`, offering high performance.
 - ⚙️ **Custom Handlers**: Define your notification handling logic dynamically.
