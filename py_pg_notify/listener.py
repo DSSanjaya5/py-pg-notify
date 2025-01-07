@@ -2,6 +2,7 @@
 Module to manage PostgreSQL notification listeners using asyncpg.
 """
 
+from typing import Callable
 from .pgmanager import PGManager, PGConfig
 
 
@@ -47,7 +48,7 @@ class Listener(PGManager):
         super().__init__(config)
         self.listeners = {}
 
-    async def add_listener(self, channel: str, callback):
+    async def add_listener(self, channel: str, callback: Callable):
         """
         Adds a listener for a specific channel.
 
