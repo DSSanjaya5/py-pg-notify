@@ -33,15 +33,15 @@ You can use `PGConfig` to manage PostgreSQL connection parameters via a dictiona
 ```python
 from py_pg_notify import PGConfig
 
-# Example using a dictionary
-config_dict = {
+# Example using keyword args
+kwargs = {
     "user": "<username>",
     "password": "<password>",
     "host": "<host>",
     "port": 5432,
     "dbname": "<dbname>"
 }
-config = PGConfig(config_dict=config_dict)
+config = PGConfig(**kwargs)
 
 # Example using environment variables
 # Ensure PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, and PG_DBNAME are set in your environment
