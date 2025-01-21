@@ -19,7 +19,6 @@ class PGConfig:
     def __init__(
         self,
         dsn: str = None,
-        config_dict=None,
         *,
         user: str = None,
         password: str = None,
@@ -31,7 +30,6 @@ class PGConfig:
         Initializes the PGConfig class.
 
         Args:
-            config_dict (dict, optional): A dictionary containing connection parameters.
             dsn (str, optional): The Data Source Name for PostgreSQL connection. Defaults to None.
             user (str, optional): The database user.
             password (str, optional): The user's password.
@@ -41,17 +39,14 @@ class PGConfig:
 
         Priority of parameter resolution:
         1. Explicit parameters passed to this class.
-        2. Values from `config_dict`.
-        3. Environment variables (`PG_USER`, `PG_PASSWORD`, `PG_HOST`, `PG_PORT`, `PG_DBNAME`).
+        2. Environment variables (`PG_USER`, `PG_PASSWORD`, `PG_HOST`, `PG_PORT`, `PG_DBNAME`).
         """
-        # Extract from dictionary if provided
-        config_dict = config_dict or {}
         self.dsn = dsn or self._generate_dsn(
-            user or config_dict.get("user") or os.getenv("PG_USER"),
-            password or config_dict.get("password") or os.getenv("PG_PASSWORD"),
-            host or config_dict.get("host") or os.getenv("PG_HOST", "localhost"),
-            port or config_dict.get("port") or os.getenv("PG_PORT", 5432),
-            dbname or config_dict.get("dbname") or os.getenv("PG_DBNAME"),
+            user or os.getenv("PG_USER"),
+            password or os.getenv("PG_PASSWORD"),
+            host or os.getenv("PG_HOST", "localhost"),
+            port or os.getenv("PG_PORT", 5432),
+            dbname or os.getenv("PG_DBNAME"),
         )
 
     def _generate_dsn(self, user, password, host, port, dbname):
