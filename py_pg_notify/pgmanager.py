@@ -1,4 +1,5 @@
 import os
+import re
 import asyncpg
 
 
@@ -108,6 +109,8 @@ class PGManager:
         if self.conn is None:
             raise RuntimeError("Connection not established. Call `connect()` first.")
         try:
+            if bool(re.match(r"^\s*SELECT\b", query, re.IGNORECASE)):
+                return await self.conn.fetch(query, *args)
             return await self.conn.execute(query, *args)
         except asyncpg.exceptions.PostgresError as e:
             raise RuntimeError(f"Failed to execute query: {e}")
