@@ -53,11 +53,7 @@ async def start_listener():
         print(
             "Listener is active and waiting for inventory updates. Press Ctrl+C to exit."
         )
-        try:
-            # Keep the listener running
-            await asyncio.sleep(3600)
-        except asyncio.CancelledError:
-            print("Listener stopped.")
+        await asyncio.Future()
 
 
 if __name__ == "__main__":

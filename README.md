@@ -104,7 +104,7 @@ async def main():
 
     async with Listener(config) as listener:
         await listener.add_listener("ch_01", notification_handler)
-        await asyncio.sleep(3600)  # Simulate long-running process
+        await asyncio.Future()
 
 if __name__ == "__main__":
     try: 

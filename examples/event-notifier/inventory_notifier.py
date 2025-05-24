@@ -87,4 +87,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print(f"[{datetime.now()}] Process terminated by user.")
     except Exception as e:
-        print(f"Notifier Error: {e}")
+        raise Exception(f"Notifier Error: {e}")
